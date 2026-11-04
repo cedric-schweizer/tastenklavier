@@ -5,9 +5,11 @@ final class OnboardingWindow: NSWindowController {
     private let status = NSTextField(labelWithString: "")
     private let openButton = NSButton(title: "Einstellungen öffnen", target: nil, action: nil)
     private let restartButton = NSButton(title: "App neu starten", target: nil, action: nil)
+    private let doneButton = NSButton(title: "Menü zeigen", target: nil, action: nil)
+    var onDone: (() -> Void)?
 
     convenience init() {
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 320),
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 470, height: 380),
                               styleMask: [.titled, .closable], backing: .buffered, defer: false)
         window.title = "Tastenklavier einrichten"
         window.isReleasedWhenClosed = false
@@ -24,7 +26,9 @@ final class OnboardingWindow: NSWindowController {
             "Die App speichert und sendet nichts und nutzt kein Internet.\n\n" +
             "1.  Klick auf «Einstellungen öffnen».\n" +
             "2.  Schalte «Tastenklavier» unter «Eingabeüberwachung» ein.\n" +
-            "3.  Fertig. Ein Ton bestätigt, dass es klappt.")
+            "3.  Fertig. Ein Ton bestätigt, dass es klappt.\n\n" +
+            "Tastenklavier hat kein Fenster und kein Symbol im Dock. Du findest es oben rechts in der Menüleiste, " +
+            "als kleines Klaviertasten-Symbol. Dort wählst du Instrument, Song und Lautstärke.")
         body.font = .systemFont(ofSize: 13)
         body.preferredMaxLayoutWidth = 400
 
@@ -42,7 +46,12 @@ final class OnboardingWindow: NSWindowController {
         restartButton.bezelStyle = .rounded
         restartButton.toolTip = "Falls die Erlaubnis gesetzt ist, aber noch nichts klingt"
 
-        let buttons = NSStackView(views: [openButton, restartButton])
+        doneButton.target = self
+        doneButton.action = #selector(done)
+        doneButton.bezelStyle = .rounded
+        doneButton.isHidden = true
+
+        let buttons = NSStackView(views: [openButton, restartButton, doneButton])
         buttons.spacing = 10
 
         let stack = NSStackView(views: [title, body, status, buttons])
@@ -71,12 +80,18 @@ final class OnboardingWindow: NSWindowController {
     }
 
     func showSuccess() {
-        status.stringValue = "Geschafft. Schreib irgendwo los, das Symbol findest du oben in der Menüleiste."
+        status.stringValue = "Geschafft. Schreib irgendwo los, zum Beispiel in Word oder Mail."
         status.textColor = .systemGreen
         openButton.isHidden = true
         restartButton.isHidden = true
+        doneButton.isHidden = false
+        doneButton.keyEquivalent = "\r"
         NSSound(named: "Glass")?.play()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in self?.close() }
+    }
+
+    @objc private func done() {
+        close()
+        onDone?()
     }
 
     @objc private func openSettings() {

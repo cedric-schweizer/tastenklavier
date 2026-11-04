@@ -33,6 +33,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         startListening()
     }
 
+    /// Wird die App nochmals geöffnet (Programme-Ordner, Spotlight), klappt das Menü auf,
+    /// damit sichtbar wird, wo sie läuft.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if onboarding?.window?.isVisible == true { onboarding?.present() } else { openMenu() }
+        return false
+    }
+
+    func openMenu() {
+        DispatchQueue.main.async { [weak self] in self?.statusItem.button?.performClick(nil) }
+    }
+
     // MARK: Tastaturzugriff
 
     private func startListening() {
@@ -50,7 +61,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func showOnboarding() {
-        if onboarding == nil { onboarding = OnboardingWindow() }
+        if onboarding == nil {
+            onboarding = OnboardingWindow()
+            onboarding?.onDone = { [weak self] in self?.openMenu() }
+        }
         onboarding?.present()
     }
 
